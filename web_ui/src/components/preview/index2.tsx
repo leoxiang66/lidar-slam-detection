@@ -70,71 +70,71 @@ export default function Preview({ dev = false, dt = 10 }: Props) {
   const [showMapSaving, setShowMapSaving] = useState(false);
   const [info, showMessage] = useInfoShow();
 
-  // let onDataSuccess = async (data: LSD.Detection) => {
-  //   if (!connect) {
-  //     setConnect(true);
-  //     onFirstSuccess();
-  //   }
-  //   dataFpsCounter.hit();
-  //   if (data && data.pose) {
-  //     if (drawerState == "drawing") {
-  //       data.pose.x = estPose[0];
-  //       data.pose.y = estPose[1];
-  //       data.pose.z = estPose[2];
-  //       data.pose.roll = estPose[3];
-  //       data.pose.pitch = estPose[4];
-  //       data.pose.heading = estPose[5];
-  //     }
-  //     const pos = new THREE.Vector3(data.pose.x, data.pose.y, data.pose.z);
-  //     const quat = new THREE.Quaternion();
-  //     const scale = new THREE.Vector3(1.0, 1.0, 1.0);
-  //     const euler = new THREE.Euler(
-  //       data.pose.roll * 0.01745329251994,
-  //       data.pose.pitch * 0.01745329251994,
-  //       -data.pose.heading * 0.01745329251994,
-  //       "XYZ"
-  //     );
-  //     quat.setFromEuler(euler);
-  //     quat.set(quat.y, quat.x, quat.z, quat.w);
-  //     const T = new THREE.Matrix4();
-  //     T.compose(pos, quat, scale);
-  //     insExtrinic && T.multiply(insExtrinic);
-  //     const invT = T.clone().invert();
+  let onDataSuccess = async (data: LSD.Detection) => {
+    if (!connect) {
+      setConnect(true);
+      onFirstSuccess();
+    }
+    dataFpsCounter.hit();
+    if (data && data.pose) {
+      if (drawerState == "drawing") {
+        data.pose.x = estPose[0];
+        data.pose.y = estPose[1];
+        data.pose.z = estPose[2];
+        data.pose.roll = estPose[3];
+        data.pose.pitch = estPose[4];
+        data.pose.heading = estPose[5];
+      }
+      const pos = new THREE.Vector3(data.pose.x, data.pose.y, data.pose.z);
+      const quat = new THREE.Quaternion();
+      const scale = new THREE.Vector3(1.0, 1.0, 1.0);
+      const euler = new THREE.Euler(
+        data.pose.roll * 0.01745329251994,
+        data.pose.pitch * 0.01745329251994,
+        -data.pose.heading * 0.01745329251994,
+        "XYZ"
+      );
+      quat.setFromEuler(euler);
+      quat.set(quat.y, quat.x, quat.z, quat.w);
+      const T = new THREE.Matrix4();
+      T.compose(pos, quat, scale);
+      insExtrinic && T.multiply(insExtrinic);
+      const invT = T.clone().invert();
 
-  //     // invT
-  //     invT.decompose(pos, quat, scale);
-  //     euler.setFromQuaternion(quat);
-  //     setInvPointProp({
-  //       position: pos.toArray() as [number, number, number],
-  //       rotation: euler.toArray() as [number, number, number, string],
-  //     });
+      // invT
+      invT.decompose(pos, quat, scale);
+      euler.setFromQuaternion(quat);
+      setInvPointProp({
+        position: pos.toArray() as [number, number, number],
+        rotation: euler.toArray() as [number, number, number, string],
+      });
 
-  //     // T
-  //     if (config.camera.type != CONTROL_TYPE.SELF) {
-  //       data.points = transformPoints(data.points, T);
-  //     }
-  //     T.decompose(pos, quat, scale);
-  //     euler.setFromQuaternion(quat);
-  //     setPointProp({
-  //       position: pos.toArray() as [number, number, number],
-  //       rotation: euler.toArray() as [number, number, number, string],
-  //     });
-  //   }
-  //   if (data.header?.timestamp) {
-  //     setFrameData(data);
-  //   }
-  // };
+      // T
+      if (config.camera.type != CONTROL_TYPE.SELF) {
+        data.points = transformPoints(data.points, T);
+      }
+      T.decompose(pos, quat, scale);
+      euler.setFromQuaternion(quat);
+      setPointProp({
+        position: pos.toArray() as [number, number, number],
+        rotation: euler.toArray() as [number, number, number, string],
+      });
+    }
+    if (data.header?.timestamp) {
+      setFrameData(data);
+    }
+  };
 
   let doUpdateConfig = () => {
     setPointProp(undefined);
     setInvPointProp(undefined);
-    // getStatus().then((status) => {
-    //   if (status?.status == "Paused") {
-    //     setPause(true);
-    //   } else {
-    //     setPause(false);
-    //   }
-    // });
+    getStatus().then((status) => {
+      if (status?.status == "Paused") {
+        setPause(true);
+      } else {
+        setPause(false);
+      }
+    });
     getConfig()
       .then((config) => {
         getTransform(config.ins.extrinsic_parameters).then((T) => {
@@ -154,16 +154,16 @@ export default function Preview({ dev = false, dt = 10 }: Props) {
       .catch(() => setBoardConfig(undefined));
   };
 
-  // useRequest(() => getDetection(config.object.showOnImage, config.pointcloud.sampleStep), {
-  //   pollingInterval: dt,
-  //   manual: false,
-  //   onSuccess: onDataSuccess,
-  //   onError: () => {
-  //     setConnect(false);
-  //     setPointProp(undefined);
-  //     setInvPointProp(undefined);
-  //   },
-  // });
+  useRequest(() => getDetection(config.object.showOnImage, config.pointcloud.sampleStep), {
+    pollingInterval: dt,
+    manual: false,
+    onSuccess: onDataSuccess,
+    onError: () => {
+      setConnect(false);
+      setPointProp(undefined);
+      setInvPointProp(undefined);
+    },
+  });
 
   window.onkeyup = (ev: KeyboardEvent) => {
     if (ev.key === " ") {
@@ -181,19 +181,19 @@ export default function Preview({ dev = false, dt = 10 }: Props) {
     }
   };
 
-  // let onFirstSuccess = () => {
-  //   doUpdateConfig();
-  //   getRoi().then(({ roi, inside }) => {
-  //     setRoi(roi.map((pt) => ({ x: pt[0], y: pt[1], z: 0 })));
-  //     if (roi.length != 0) {
-  //       setRoiSide(inside ? "in" : "out");
-  //     } else {
-  //       setRoiSide(null);
-  //       setPadState("drawing");
-  //       padRef.current?.start();
-  //     }
-  //   });
-  // };
+  let onFirstSuccess = () => {
+    doUpdateConfig();
+    getRoi().then(({ roi, inside }) => {
+      setRoi(roi.map((pt) => ({ x: pt[0], y: pt[1], z: 0 })));
+      if (roi.length != 0) {
+        setRoiSide(inside ? "in" : "out");
+      } else {
+        setRoiSide(null);
+        setPadState("drawing");
+        padRef.current?.start();
+      }
+    });
+  };
 
   const [roi, setRoi] = useState<{ x: number; y: number; z: number }[]>([]);
   const [roiSide, setRoiSide] = useState<"in" | "out" | null>(null);
